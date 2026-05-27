@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Звіти — HabitTracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: rgba(255,255,255,0.04);
+            --surface-hover: rgba(255,255,255,0.07);
+            --border: rgba(255,255,255,0.08);
+            --text: #f1f0ff;
+            --text-muted: #6b6880;
+            --text-soft: #9d9ab0;
+            --accent: #c084fc;
+            --accent-glow: rgba(192,132,252,0.12);
+            --pink: #f472b6;
+            --green: #4ade80;
+            --orange: #fb923c;
+            --blue: #38bdf8;
+            --radius: 18px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: -15%;
+            right: -5%;
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(192,132,252,0.05) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        nav {
+            position: sticky; top: 0; z-index: 100;
+            height: 68px;
+            background: rgba(10,10,15,0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+        }
+        .nav-brand {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800; font-size: 18px;
+        }
+        .nav-brand span {
+            background: linear-gradient(135deg, var(--accent), var(--pink));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .nav-links { display: flex; gap: 4px; }
+        .nav-links a {
+            padding: 7px 14px; border-radius: 10px;
+            text-decoration: none; color: var(--text-muted);
+            font-size: 13px; font-weight: 500; transition: all 0.2s;
+        }
+        .nav-links a:hover { background: var(--surface-hover); color: var(--text); }
+        .nav-links a.active { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(192,132,252,0.2); }
+        .nav-links a.danger { color: #f87171; }
+        .nav-links a.danger:hover { background: rgba(248,113,113,0.08); }
+
+        .container { max-width: 1020px; margin: 0 auto; padding: 40px 20px 80px; position: relative; z-index: 1; }
+
+        .page-header { margin-bottom: 36px; }
+        .page-header h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: 30px; font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        .page-header p { color: var(--text-muted); font-size: 14px; margin-top: 6px; }
+
+        /* STATS GRID */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 12px; margin-bottom: 28px;
+        }
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 22px 18px;
+            text-align: center;
+            transition: all 0.25s;
+            position: relative; overflow: hidden;
+        }
+        .stat-card::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(135deg, transparent 60%, rgba(255,255,255,0.015));
+            pointer-events: none;
+        }
+        .stat-card:hover { border-color: rgba(255,255,255,0.14); background: var(--surface-hover); transform: translateY(-2px); }
+        .stat-icon { font-size: 24px; margin-bottom: 10px; }
+        .stat-number {
+            font-family: 'Syne', sans-serif;
+            font-size: 34px; font-weight: 800; line-height: 1;
+            margin-bottom: 6px;
+        }
+        .stat-number.purple { color: var(--accent); }
+        .stat-number.pink { color: var(--pink); }
+        .stat-number.orange { color: var(--orange); }
+        .stat-number.blue { color: var(--blue); }
+        .stat-label { font-size: 12px; color: var(--text-muted); font-weight: 400; }
+
+        /* CHARTS */
+        .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        .chart-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 26px;
+        }
+        .chart-card.full { grid-column: 1 / -1; }
+        .chart-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 15px; font-weight: 700;
+            color: var(--text); margin-bottom: 20px;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        /* HEATMAP */
+        .heatmap-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 26px;
+            margin-bottom: 16px;
+            overflow-x: auto;
+        }
+        .heatmap-grid { display: flex; flex-wrap: wrap; gap: 3px; }
+        .heatmap-cell {
+            width: 13px; height: 13px;
+            border-radius: 3px;
+            background: rgba(255,255,255,0.05);
+            cursor: pointer; transition: transform 0.1s;
+        }
+        .heatmap-cell:hover { transform: scale(1.6); z-index: 10; position: relative; }
+        .level-1 { background: rgba(192,132,252,0.2); }
+        .level-2 { background: rgba(192,132,252,0.45); }
+        .level-3 { background: rgba(192,132,252,0.7); }
+        .level-4 { background: #c084fc; box-shadow: 0 0 6px rgba(192,132,252,0.4); }
+        .heatmap-legend {
+            display: flex; align-items: center; gap: 6px;
+            margin-top: 14px; font-size: 11px; color: var(--text-muted);
+        }
+        .legend-cell { width: 11px; height: 11px; border-radius: 2px; }
+
+        /* PROGRESS BARS */
+        .progress-item { margin-bottom: 18px; }
+        .progress-item:last-child { margin-bottom: 0; }
+        .progress-meta {
+            display: flex; justify-content: space-between;
+            font-size: 13px; margin-bottom: 8px;
+        }
+        .progress-meta span { color: var(--text-soft); font-weight: 500; }
+        .progress-meta strong { color: var(--accent); font-weight: 700; }
+        .progress-track {
+            background: rgba(255,255,255,0.06);
+            border-radius: 99px; height: 8px; overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%; border-radius: 99px;
+            background: linear-gradient(90deg, var(--accent), var(--pink));
+            transition: width 1s cubic-bezier(0.16,1,0.3,1);
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .charts-row { grid-template-columns: 1fr; }
+            nav { padding: 0 16px; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-brand">🎯 <span>HabitTracker</span></div>
+        <div class="nav-links">
+            <a href="{% url 'habit_list' %}">Звички</a>
+            <a href="{% url 'reports' %}" class="active">📊 Звіти</a>
+            <a href="{% url 'ai_analysis' %}">🤖 AI</a>
+            <a href="{% url 'logout' %}" class="danger">Вийти</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>📊 Звіти та статистика</h1>
+            <p>Відстежуй свій прогрес і аналізуй звички</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-number purple">{{ total_habits }}</div>
+                <div class="stat-label">Активних звичок</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📅</div>
+                <div class="stat-number pink">{{ week_rate }}%</div>
+                <div class="stat-label">Цього тижня</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🗓</div>
+                <div class="stat-number blue">{{ month_rate }}%</div>
+                <div class="stat-label">Цього місяця</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🔥</div>
+                <div class="stat-number orange">{{ week_logs }}</div>
+                <div class="stat-label">Виконань за тиждень</div>
+            </div>
+        </div>
+
+        <div class="charts-row">
+            <div class="chart-card">
+                <div class="chart-title">📈 Тиждень vs Місяць</div>
+                <canvas id="comparisonChart" height="220"></canvas>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">🍩 Виконання цього тижня</div>
+                <canvas id="donutChart" height="220"></canvas>
+            </div>
+        </div>
+
+        <div class="heatmap-card">
+            <div class="chart-title">🗓 Активність за рік</div>
+            <div class="heatmap-grid" id="heatmap"></div>
+            <div class="heatmap-legend">
+                Менше
+                <div class="legend-cell" style="background:rgba(255,255,255,0.05)"></div>
+                <div class="legend-cell" style="background:rgba(192,132,252,0.2)"></div>
+                <div class="legend-cell" style="background:rgba(192,132,252,0.45)"></div>
+                <div class="legend-cell" style="background:rgba(192,132,252,0.7)"></div>
+                <div class="legend-cell" style="background:#c084fc"></div>
+                Більше
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-title">📊 Прогрес виконання</div>
+            <div class="progress-item">
+                <div class="progress-meta">
+                    <span>Цього тижня</span>
+                    <strong>{{ week_rate }}%</strong>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill" style="width: {{ week_rate }}%"></div>
+                </div>
+            </div>
+            <div class="progress-item">
+                <div class="progress-meta">
+                    <span>Цього місяця</span>
+                    <strong>{{ month_rate }}%</strong>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill" style="width: {{ month_rate }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Heatmap
+        const heatmapData = {{ heatmap_data|safe }};
+        const grid = document.getElementById('heatmap');
+        const today = new Date();
+        const startDate = new Date(today);
+        startDate.setDate(startDate.getDate() - 364);
+        for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
+            const dateStr = d.toISOString().split('T')[0];
+            const count = heatmapData[dateStr] || 0;
+            const cell = document.createElement('div');
+            cell.className = 'heatmap-cell';
+            if (count >= 4) cell.classList.add('level-4');
+            else if (count === 3) cell.classList.add('level-3');
+            else if (count === 2) cell.classList.add('level-2');
+            else if (count === 1) cell.classList.add('level-1');
+            cell.title = `${dateStr}: ${count} звичок`;
+            grid.appendChild(cell);
+        }
+
+        const chartDefaults = {
+            color: '#9d9ab0',
+            font: { family: 'DM Sans' }
+        };
+        Chart.defaults.color = chartDefaults.color;
+        Chart.defaults.font.family = chartDefaults.font.family;
+
+        // Bar chart
+        new Chart(document.getElementById('comparisonChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Тиждень', 'Місяць'],
+                datasets: [{
+                    data: [{{ week_rate }}, {{ month_rate }}],
+                    backgroundColor: ['rgba(192,132,252,0.7)', 'rgba(244,114,182,0.7)'],
+                    borderRadius: 10,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true, max: 100,
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#6b6880' },
+                        border: { display: false }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#9d9ab0' },
+                        border: { display: false }
+                    }
+                }
+            }
+        });
+
+        // Donut
+        const done = {{ week_rate }};
+        const notDone = Math.max(0, 100 - done);
+        new Chart(document.getElementById('donutChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Виконано', 'Не виконано'],
+                datasets: [{
+                    data: [done, notDone],
+                    backgroundColor: ['rgba(192,132,252,0.8)', 'rgba(255,255,255,0.06)'],
+                    borderWidth: 0,
+                    borderRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '72%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#9d9ab0', padding: 16, font: { size: 12 } }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Аналіз — HabitTracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: rgba(255,255,255,0.04);
+            --surface-hover: rgba(255,255,255,0.07);
+            --border: rgba(255,255,255,0.08);
+            --text: #f1f0ff;
+            --text-muted: #6b6880;
+            --text-soft: #9d9ab0;
+            --accent: #c084fc;
+            --accent-glow: rgba(192,132,252,0.12);
+            --pink: #f472b6;
+            --green: #4ade80;
+            --orange: #fb923c;
+            --radius: 18px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg); color: var(--text);
+            min-height: 100vh;
+        }
+        body::before {
+            content: '';
+            position: fixed; top: -10%; left: 50%; transform: translateX(-50%);
+            width: 700px; height: 400px;
+            background: radial-gradient(ellipse, rgba(192,132,252,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        nav {
+            position: sticky; top: 0; z-index: 100;
+            height: 68px;
+            background: rgba(10,10,15,0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center;
+            justify-content: space-between; padding: 0 32px;
+        }
+        .nav-brand { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; }
+        .nav-brand span {
+            background: linear-gradient(135deg, var(--accent), var(--pink));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .nav-links { display: flex; gap: 4px; }
+        .nav-links a {
+            padding: 7px 14px; border-radius: 10px;
+            text-decoration: none; color: var(--text-muted);
+            font-size: 13px; font-weight: 500; transition: all 0.2s;
+        }
+        .nav-links a:hover { background: var(--surface-hover); color: var(--text); }
+        .nav-links a.active { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(192,132,252,0.2); }
+        .nav-links a.danger { color: #f87171; }
+        .nav-links a.danger:hover { background: rgba(248,113,113,0.08); }
+
+        .container { max-width: 720px; margin: 0 auto; padding: 48px 20px 80px; position: relative; z-index: 1; }
+
+        .page-header { margin-bottom: 36px; }
+        .page-header h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: 30px; font-weight: 800; letter-spacing: -0.5px;
+            margin-bottom: 6px;
+        }
+        .page-header p { color: var(--text-muted); font-size: 14px; }
+
+        /* HABITS LIST */
+        .habits-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .section-label {
+            font-size: 11px; font-weight: 600;
+            letter-spacing: 1.2px; text-transform: uppercase;
+            color: var(--text-muted); margin-bottom: 14px;
+        }
+        .habit-chip {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 7px 13px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 99px;
+            font-size: 13px; color: var(--text-soft);
+            margin: 4px;
+            transition: all 0.2s;
+        }
+        .habit-chip:hover { border-color: rgba(192,132,252,0.3); color: var(--text); }
+
+        /* ANALYZE BUTTON */
+        .btn-analyze {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--accent), var(--pink));
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-family: 'Syne', sans-serif;
+            font-size: 16px; font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s;
+            display: flex; align-items: center; justify-content: center;
+            gap: 10px;
+            letter-spacing: -0.2px;
+            margin-bottom: 24px;
+        }
+        .btn-analyze:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(192,132,252,0.25);
+        }
+        .btn-analyze:active { transform: translateY(0); }
+        .btn-analyze:disabled {
+            opacity: 0.5; cursor: not-allowed; transform: none;
+        }
+
+        /* LOADING */
+        .loading-state {
+            display: none;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 40px 24px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .loading-state.visible { display: block; }
+        .loader {
+            width: 40px; height: 40px;
+            border: 3px solid rgba(192,132,252,0.2);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-state p { color: var(--text-muted); font-size: 14px; }
+
+        /* AI RESPONSE */
+        .ai-response {
+            background: var(--surface);
+            border: 1px solid rgba(192,132,252,0.2);
+            border-radius: var(--radius);
+            padding: 28px;
+            position: relative;
+            overflow: hidden;
+            animation: fadeIn 0.4s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .ai-response::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(192,132,252,0.5), transparent);
+        }
+        .ai-response-header {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .ai-avatar {
+            width: 36px; height: 36px;
+            background: var(--accent-glow);
+            border: 1px solid rgba(192,132,252,0.3);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+        }
+        .ai-name {
+            font-family: 'Syne', sans-serif;
+            font-size: 14px; font-weight: 700; color: var(--accent);
+        }
+        .ai-name span { color: var(--text-muted); font-weight: 400; font-size: 12px; display: block; }
+        .ai-body {
+            color: var(--text-soft);
+            font-size: 14px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+        }
+        .ai-body strong { color: var(--text); font-weight: 600; }
+
+        /* WARNING state */
+        .ai-response.warning {
+            border-color: rgba(251,146,60,0.2);
+        }
+        .ai-response.warning::before {
+            background: linear-gradient(90deg, transparent, rgba(251,146,60,0.4), transparent);
+        }
+        .ai-response.warning .ai-name { color: var(--orange); }
+        .ai-response.warning .ai-avatar {
+            background: rgba(251,146,60,0.1);
+            border-color: rgba(251,146,60,0.3);
+        }
+
+        @media (max-width: 600px) {
+            nav { padding: 0 16px; }
+            .container { padding: 28px 14px 60px; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-brand">🎯 <span>HabitTracker</span></div>
+        <div class="nav-links">
+            <a href="{% url 'habit_list' %}">Звички</a>
+            <a href="{% url 'reports' %}">📊 Звіти</a>
+            <a href="{% url 'ai_analysis' %}" class="active">🤖 AI</a>
+            <a href="{% url 'logout' %}" class="danger">Вийти</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>🤖 AI Аналіз звичок</h1>
+            <p>Персональні рекомендації на основі твоїх звичок за останній тиждень</p>
+        </div>
+
+        <div class="habits-section">
+            <div class="section-label">Твої звички</div>
+            {% for habit in habits %}
+                <span class="habit-chip">
+                    {% if habit.icon %}{{ habit.icon }}{% else %}●{% endif %}
+                    {{ habit.name }}
+                </span>
+            {% empty %}
+                <p style="color:var(--text-muted); font-size:14px">Немає активних звичок</p>
+            {% endfor %}
+        </div>
+
+        <form method="post" id="analyzeForm">
+            {% csrf_token %}
+            <button type="submit" class="btn-analyze" id="analyzeBtn">
+                <span>🔍</span> Проаналізувати мої звички
+            </button>
+        </form>
+
+        <div class="loading-state" id="loadingState">
+            <div class="loader"></div>
+            <p>AI аналізує твої звички...</p>
+        </div>
+
+        {% if ai_response %}
+            <div class="ai-response {% if '⚠️' in ai_response %}warning{% endif %}">
+                <div class="ai-response-header">
+                    <div class="ai-avatar">🤖</div>
+                    <div class="ai-name">
+                        AI Коуч
+                        <span>Персональний аналіз</span>
+                    </div>
+                </div>
+                <div class="ai-body">{{ ai_response }}</div>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        document.getElementById('analyzeForm').addEventListener('submit', () => {
+            document.getElementById('analyzeBtn').disabled = true;
+            document.getElementById('analyzeBtn').textContent = 'Аналізую...';
+            document.getElementById('loadingState').classList.add('visible');
+        });
+    </script>
+</body>
+</html>

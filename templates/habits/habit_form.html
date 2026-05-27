@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Нова звичка — HabitTracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: rgba(255,255,255,0.04);
+            --surface-hover: rgba(255,255,255,0.07);
+            --border: rgba(255,255,255,0.08);
+            --border-focus: rgba(192,132,252,0.4);
+            --text: #f1f0ff;
+            --text-muted: #6b6880;
+            --text-soft: #9d9ab0;
+            --accent: #c084fc;
+            --accent-glow: rgba(192,132,252,0.12);
+            --pink: #f472b6;
+            --green: #4ade80;
+            --radius: 16px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: -20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(192,132,252,0.05) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        /* NAV */
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            height: 68px;
+            background: rgba(10,10,15,0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+        }
+        .nav-brand {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 18px;
+        }
+        .nav-brand span {
+            background: linear-gradient(135deg, var(--accent), var(--pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .nav-links { display: flex; gap: 4px; }
+        .nav-links a {
+            padding: 7px 14px;
+            border-radius: 10px;
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .nav-links a:hover { background: var(--surface-hover); color: var(--text); }
+        .nav-links a.danger { color: #f87171; }
+        .nav-links a.danger:hover { background: rgba(248,113,113,0.08); }
+
+        /* LAYOUT */
+        .container {
+            max-width: 580px;
+            margin: 0 auto;
+            padding: 48px 20px 80px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* PAGE HEADER */
+        .page-header {
+            margin-bottom: 32px;
+        }
+        .page-header .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            transition: color 0.2s;
+        }
+        .page-header .back-link:hover { color: var(--text); }
+        .page-header h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 6px;
+        }
+        .page-header p { color: var(--text-muted); font-size: 14px; }
+
+        /* FORM CARD */
+        .form-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 36px;
+            position: relative;
+            overflow: hidden;
+        }
+        .form-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(192,132,252,0.3), transparent);
+        }
+
+        /* FORM FIELDS */
+        .field-group {
+            margin-bottom: 22px;
+        }
+        .field-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-soft);
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        .field-group input[type="text"],
+        .field-group input[type="color"],
+        .field-group textarea,
+        .field-group select {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .field-group input:focus,
+        .field-group textarea:focus,
+        .field-group select:focus {
+            border-color: var(--border-focus);
+            background: rgba(192,132,252,0.04);
+            box-shadow: 0 0 0 3px rgba(192,132,252,0.08);
+        }
+        .field-group textarea {
+            resize: vertical;
+            min-height: 80px;
+            line-height: 1.5;
+        }
+        .field-group select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b6880' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            padding-right: 36px;
+        }
+        .field-group select option {
+            background: #1a1a24;
+            color: var(--text);
+        }
+
+        /* Color input special styling */
+        .field-group input[type="color"] {
+            padding: 6px 10px;
+            height: 44px;
+            cursor: pointer;
+            border-radius: 12px;
+        }
+        .color-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .color-presets {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .color-preset {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .color-preset:hover { transform: scale(1.15); border-color: rgba(255,255,255,0.3); }
+
+        /* Error messages */
+        .errorlist {
+            list-style: none;
+            margin-top: 6px;
+        }
+        .errorlist li {
+            font-size: 12px;
+            color: #f87171;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .errorlist li::before { content: '⚠'; }
+
+        /* Divider */
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 28px 0;
+        }
+
+        .section-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-soft);
+            letter-spacing: 0.5px;
+            margin-bottom: 18px;
+        }
+
+        /* Two cols */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        /* BUTTONS */
+        .btn-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 32px;
+        }
+        .btn-save {
+            flex: 1;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--accent), var(--pink));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Syne', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: -0.2px;
+        }
+        .btn-save:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(192,132,252,0.25);
+        }
+        .btn-save:active { transform: translateY(0); }
+
+        .btn-cancel {
+            padding: 14px 22px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            border-radius: 12px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        .btn-cancel:hover {
+            border-color: var(--border-hover, rgba(255,255,255,0.18));
+            color: var(--text);
+        }
+
+        @media (max-width: 600px) {
+            nav { padding: 0 16px; }
+            .container { padding: 28px 14px 60px; }
+            .form-card { padding: 24px 20px; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-brand">🎯 <span>HabitTracker</span></div>
+        <div class="nav-links">
+            <a href="{% url 'habit_list' %}">← Назад</a>
+            <a href="{% url 'logout' %}" class="danger">Вийти</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <a href="{% url 'habit_list' %}" class="back-link">← Всі звички</a>
+            <h1>✨ Нова звичка</h1>
+            <p>Додай звичку яку хочеш відстежувати щодня</p>
+        </div>
+
+        <div class="form-card">
+            <form method="post">
+                {% csrf_token %}
+
+                <!-- Name -->
+                <div class="field-group">
+                    <label for="id_name">Назва звички</label>
+                    {{ form.name }}
+                    {{ form.name.errors }}
+                </div>
+
+                <!-- Description -->
+                <div class="field-group">
+                    <label for="id_description">Опис <span style="color:var(--text-muted); font-weight:400; text-transform:none; letter-spacing:0">(необов'язково)</span></label>
+                    {{ form.description }}
+                    {{ form.description.errors }}
+                </div>
+
+                <div class="divider"></div>
+                <div class="section-title">Налаштування</div>
+
+                <div class="form-row">
+                    <!-- Frequency -->
+                    <div class="field-group">
+                        <label for="id_frequency">Частота</label>
+                        {{ form.frequency }}
+                        {{ form.frequency.errors }}
+                    </div>
+
+                    <!-- Category -->
+                    {% if form.category %}
+                    <div class="field-group">
+                        <label for="id_category">Категорія</label>
+                        {{ form.category }}
+                        {{ form.category.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-row">
+                    <!-- Icon -->
+                    <div class="field-group">
+                        <label for="id_icon">Emoji іконка</label>
+                        {{ form.icon }}
+                        {{ form.icon.errors }}
+                    </div>
+
+                    <!-- Color -->
+                    <div class="field-group">
+                        <label for="id_color">Колір</label>
+                        <div class="color-row">
+                            {{ form.color }}
+                            <div class="color-presets">
+                                <div class="color-preset" style="background:#c084fc" onclick="setColor('#c084fc')"></div>
+                                <div class="color-preset" style="background:#f472b6" onclick="setColor('#f472b6')"></div>
+                                <div class="color-preset" style="background:#4ade80" onclick="setColor('#4ade80')"></div>
+                                <div class="color-preset" style="background:#fb923c" onclick="setColor('#fb923c')"></div>
+                                <div class="color-preset" style="background:#38bdf8" onclick="setColor('#38bdf8')"></div>
+                                <div class="color-preset" style="background:#facc15" onclick="setColor('#facc15')"></div>
+                            </div>
+                        </div>
+                        {{ form.color.errors }}
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <button type="submit" class="btn-save">Зберегти звичку</button>
+                    <a href="{% url 'habit_list' %}" class="btn-cancel">Скасувати</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function setColor(hex) {
+            const input = document.getElementById('id_color');
+            if (input) input.value = hex;
+        }
+
+        // Placeholder text для полів
+        document.addEventListener('DOMContentLoaded', () => {
+            const nameInput = document.getElementById('id_name');
+            const descInput = document.getElementById('id_description');
+            const iconInput = document.getElementById('id_icon');
+            if (nameInput) nameInput.placeholder = 'Наприклад: Медитація, Спорт, Читання...';
+            if (descInput) descInput.placeholder = 'Коротко опиши навіщо ця звичка';
+            if (iconInput) iconInput.placeholder = '🏃';
+        });
+    </script>
+</body>
+</html>

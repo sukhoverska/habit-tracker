@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HabitTracker — Відстежуй свої звички</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #0a0a0f;
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .bg-blob {
+            position: fixed; border-radius: 50%;
+            filter: blur(100px); pointer-events: none; z-index: 0;
+        }
+        .blob-1 { width: 500px; height: 500px; background: rgba(192,132,252,0.08); top: -100px; right: -100px; }
+        .blob-2 { width: 400px; height: 400px; background: rgba(244,114,182,0.06); bottom: -100px; left: -100px; }
+        .blob-3 { width: 300px; height: 300px; background: rgba(99,102,241,0.06); top: 40%; left: 40%; }
+
+        nav {
+            position: relative; z-index: 10;
+            padding: 20px 40px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .nav-brand {
+            font-family: 'Syne', sans-serif;
+            font-size: 20px; font-weight: 800;
+            background: linear-gradient(135deg, #c084fc, #f472b6);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .nav-actions { display: flex; gap: 8px; }
+        .btn-ghost {
+            padding: 9px 20px; border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.7); text-decoration: none;
+            font-size: 14px; font-weight: 500; transition: all 0.2s;
+        }
+        .btn-ghost:hover { border-color: rgba(192,132,252,0.4); color: #c084fc; background: rgba(192,132,252,0.08); }
+        .btn-primary {
+            padding: 9px 20px; border-radius: 10px;
+            background: linear-gradient(135deg, #c084fc, #f472b6);
+            color: white; text-decoration: none;
+            font-size: 14px; font-weight: 600; transition: all 0.2s;
+        }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(192,132,252,0.3); }
+
+        .hero {
+            position: relative; z-index: 1;
+            text-align: center;
+            padding: 100px 20px 80px;
+            max-width: 800px; margin: 0 auto;
+            animation: fadeUp 0.8s ease;
+        }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(192,132,252,0.1);
+            border: 1px solid rgba(192,132,252,0.2);
+            padding: 6px 16px; border-radius: 99px;
+            font-size: 13px; color: #c084fc; font-weight: 500;
+            margin-bottom: 28px;
+        }
+        .hero h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: 64px; font-weight: 800;
+            line-height: 1.1; letter-spacing: -2px;
+            margin-bottom: 24px;
+        }
+        .hero h1 .gradient {
+            background: linear-gradient(135deg, #c084fc, #f472b6, #fb923c);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .hero p {
+            font-size: 18px; color: rgba(255,255,255,0.5);
+            line-height: 1.7; max-width: 500px; margin: 0 auto 40px;
+        }
+        .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .btn-hero {
+            padding: 14px 32px; border-radius: 14px;
+            font-size: 16px; font-weight: 700;
+            text-decoration: none; transition: all 0.2s;
+        }
+        .btn-hero-primary {
+            background: linear-gradient(135deg, #c084fc, #f472b6);
+            color: white; box-shadow: 0 8px 32px rgba(192,132,252,0.25);
+        }
+        .btn-hero-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(192,132,252,0.35); }
+        .btn-hero-secondary {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.8);
+        }
+        .btn-hero-secondary:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
+
+        .features {
+            position: relative; z-index: 1;
+            max-width: 900px; margin: 0 auto;
+            padding: 0 20px 100px;
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+            animation: fadeUp 0.8s 0.2s ease both;
+        }
+        .feature-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 20px; padding: 28px 24px;
+            transition: all 0.3s;
+        }
+        .feature-card:hover {
+            background: rgba(192,132,252,0.05);
+            border-color: rgba(192,132,252,0.2);
+            transform: translateY(-4px);
+        }
+        .feature-icon { font-size: 36px; margin-bottom: 16px; display: block; }
+        .feature-card h3 {
+            font-family: 'Syne', sans-serif;
+            font-size: 17px; font-weight: 700;
+            color: white; margin-bottom: 8px;
+        }
+        .feature-card p { font-size: 14px; color: rgba(255,255,255,0.4); line-height: 1.6; }
+
+        .stats-row {
+            position: relative; z-index: 1;
+            max-width: 600px; margin: 0 auto 80px;
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 1px; background: rgba(255,255,255,0.07);
+            border-radius: 20px; overflow: hidden;
+            animation: fadeUp 0.8s 0.3s ease both;
+        }
+        .stat-item {
+            background: #0a0a0f; padding: 28px 20px; text-align: center;
+        }
+        .stat-item .num {
+            font-family: 'Syne', sans-serif;
+            font-size: 36px; font-weight: 800;
+            background: linear-gradient(135deg, #c084fc, #f472b6);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .stat-item .lbl { font-size: 13px; color: rgba(255,255,255,0.35); margin-top: 4px; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
+    <div class="bg-blob blob-3"></div>
+
+    <nav>
+        <div class="nav-brand">🎯 HabitTracker</div>
+        <div class="nav-actions">
+            <a href="{% url 'login' %}" class="btn-ghost">Увійти</a>
+            <a href="{% url 'register' %}" class="btn-primary">Почати безкоштовно</a>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <div class="hero-badge">✨ Твій особистий трекер звичок</div>
+        <h1>Будуй кращі<br><span class="gradient">звички щодня</span></h1>
+        <p>Відстежуй прогрес, підтримуй streak і отримуй персональні рекомендації від AI</p>
+        <div class="hero-actions">
+            <a href="{% url 'register' %}" class="btn-hero btn-hero-primary">🚀 Почати безкоштовно</a>
+            <a href="{% url 'login' %}" class="btn-hero btn-hero-secondary">Увійти →</a>
+        </div>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-item">
+            <div class="num">21</div>
+            <div class="lbl">днів для звички</div>
+        </div>
+        <div class="stat-item">
+            <div class="num">🔥</div>
+            <div class="lbl">streak система</div>
+        </div>
+        <div class="stat-item">
+            <div class="num">AI</div>
+            <div class="lbl">аналіз прогресу</div>
+        </div>
+    </div>
+
+    <div class="features">
+        <div class="feature-card">
+            <span class="feature-icon">📊</span>
+            <h3>Детальна статистика</h3>
+            <p>Heatmap активності, тижневі та місячні звіти з графіками</p>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">🔥</span>
+            <h3>Streak система</h3>
+            <p>Підтримуй серію днів і не переривай свій прогрес</p>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">🤖</span>
+            <h3>AI аналіз</h3>
+            <p>Персональні рекомендації від AI на основі твоїх звичок</p>
+        </div>
+    </div>
+</body>
+</html>
