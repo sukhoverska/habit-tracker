@@ -67,9 +67,6 @@ def habit_complete(request, habit_id):
         streak.last_completed_date = today
         if streak.current_streak > streak.longest_streak:
             streak.longest_streak = streak.current_streak
-    else:
-        # Не обнуляємо streak при знятті відмітки
-        pass
     streak.save()
 
     return redirect('habit_list')
@@ -83,3 +80,16 @@ def habit_delete(request, habit_id):
         habit.archived_at = timezone.now()
         habit.save()
     return redirect('habit_list')
+
+
+@login_required
+def habit_edit(request, habit_id):
+    habit = get_object_or_404(Habit, id=habit_id, user=request.user)
+    if request.method == 'POST':
+        form = HabitForm(request.POST, instance=habit)
+        if form.is_valid():
+            form.save()
+            return redirect('habit_list')
+    else:
+        form = HabitForm(instance=habit)
+    return render(request, 'habits/habit_form.html', {'form': form, 'edit': True})
